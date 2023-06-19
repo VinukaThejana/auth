@@ -4,13 +4,16 @@ go 1.20
 
 require (
 	github.com/VinukaThejana/go-utils/logger v0.0.0-20230524054431-7c81610c58e6
+	github.com/fatih/color v1.15.0
+	github.com/redis/go-redis/v9 v9.0.5
 	github.com/spf13/viper v1.16.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.1
 )
 
 require (
-	github.com/fatih/color v1.15.0 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
