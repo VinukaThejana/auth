@@ -5,6 +5,8 @@ go 1.20
 require (
 	github.com/VinukaThejana/go-utils/logger v0.0.0-20230524054431-7c81610c58e6
 	github.com/fatih/color v1.15.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/google/uuid v1.1.2
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/spf13/viper v1.16.0
 	gorm.io/driver/postgres v1.5.2
