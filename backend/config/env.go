@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Env is a struct that contains all the data that is loaded from the env file
 type Env struct {
 	DBHost     string `mapstructure:"POSTGRES_HOST" validate:"required"`
 	DBPort     int    `mapstructure:"POSTGRES_PORT" validate:"required,min=1,max=65535"`
@@ -15,7 +16,8 @@ type Env struct {
 
 	DSN string `mapstructure:"DATABASE_URL" validate:"required"`
 
-	RedisURL string `mapstructure:"REDIS_URL" validate:"required"`
+	RedisSessionURL     string `mapstructure:"REDIS_SESSION_URL" validate:"required"`
+	RedisRatelimiterURL string `mapstructure:"REDIS_RATELIMITER_URL" validate:"required"`
 
 	Port string `mapstructure:"PORT" validate:"required"`
 
