@@ -8,4 +8,5 @@ var log logger.Logger
 // H contains all the connections to third party services
 type H struct {
 	DB *DB
+	R  *Redis
 }
