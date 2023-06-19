@@ -17,6 +17,7 @@ func init() {
 	env.Load()
 
 	h.InitDB(&env)
+	h.InitiRedis(&env)
 }
 
 func main() {
