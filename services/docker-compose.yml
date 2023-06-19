@@ -1,0 +1,29 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    ports:
+      - '6500:5432'
+    volumes:
+      - postgresDB:/data/postgres
+    env_file:
+      - ./.env
+  redisSession:
+    image: redis:alpine
+    container_name: redisSession
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisSessionDB:/data
+  redisRatelimiter:
+    image: redis:alpine
+    container_name: redisRatelimiter
+    ports:
+      - '6380:6379'
+    volumes:
+      - redisRatelimiterDB:/data
+volumes:
+  postgresDB:
+  redisSessionDB:
+  redisRatelimiterDB:
