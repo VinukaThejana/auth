@@ -3,8 +3,10 @@ package utils
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"time"
 
+	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -65,4 +67,50 @@ func (Token) CreateToken(h *initialize.H, userID, privateKey string, ttl time.Du
 	h.R.RS.Set(ctx, td.TokenUUID, userID, time.Duration(*td.ExpiresIn))
 
 	return td, nil
+}
+
+// ValidateToken is a function that is used to validate the passed token
+func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDetails, error) {
+	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected method : %s", t.Header["alg"])
+		}
+
+		return key, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok || !parsedToken.Valid {
+		return nil, fmt.Errorf("Validate : invalid token")
+	}
+
+	td := &TokenDetails{
+		TokenUUID: fmt.Sprint(claims["token_uuid"]),
+		UserID:    fmt.Sprint(claims["sub"]),
+	}
+
+	ctx := context.TODO()
+	val := h.R.RS.Get(ctx, td.TokenUUID).Val()
+	if val != "" {
+		return nil, errors.ErrUnauthorized
+	} else {
+		if val == td.UserID {
+			return td, nil
+		}
+
+		return nil, errors.ErrUnauthorized
+	}
 }
