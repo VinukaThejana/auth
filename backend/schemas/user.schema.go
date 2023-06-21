@@ -36,6 +36,13 @@ func (lI LoginInput) Vaidate() (err error) {
 	return err
 }
 
+// User struct contians the most basic data that needs to be stored from a user
+type User struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
 // UserResponse is a struct that contains all the relevant feilds of the models.User when sending the
 // user session to the client side
 type UserResponse struct {
