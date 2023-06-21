@@ -228,3 +228,58 @@ func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	})
 }
 
+func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
+	refreshToken := c.Cookies("refresh_token")
+	if refreshToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(response{
+			Status: errors.ErrUnauthorized.Error(),
+		})
+	}
+
+	_, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey)
+	if err != nil {
+		if err == errors.ErrUnauthorized {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: errors.ErrUnauthorized.Error(),
+			})
+		}
+
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	ctx := context.TODO()
+	err = utils.Token{}.DeleteToken(h, refreshToken)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+	h.R.RS.Del(ctx, c.Locals(config.Enums{}.ACCESSTOKENUUID()).(string))
+
+	expired := time.Now().Add(-time.Hour * 24)
+	c.Cookie(&fiber.Cookie{
+		Name:    "access_token",
+		Value:   "",
+		Expires: expired,
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:    "refresh_token",
+		Value:   "",
+		Expires: expired,
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:    "logged_in",
+		Value:   "",
+		Expires: expired,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
+}
