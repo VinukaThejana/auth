@@ -67,8 +67,8 @@ func CheckAuth(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	c.Locals("user", schemas.FilterUserRecord(&user))
-	c.Locals("access_token_uuid", tokenClaims.TokenUUID)
+	c.Locals(config.Enums{}.USER(), schemas.FilterUserRecord(&user))
+	c.Locals(config.Enums{}.ACCESSTOKENUUID(), tokenClaims.TokenUUID)
 
 	return c.Next()
 }
