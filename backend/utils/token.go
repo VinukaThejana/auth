@@ -124,3 +124,14 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 
 	return nil, errors.ErrUnauthorized
 }
+
+// DeleteToken is a function to delete a token
+func (Token) DeleteToken(h *initialize.H, token string) error {
+	ctx := context.Background()
+	err := h.R.RS.Del(ctx, token).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
