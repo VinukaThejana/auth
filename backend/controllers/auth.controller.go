@@ -172,3 +172,59 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	})
 }
 
+// RefreshToken is a function that is used to refresh the token
+func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
+	refreshToken := c.Cookies("refresh_token")
+	if refreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	tokenClaims, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey)
+	if err != nil {
+		if err == errors.ErrUnauthorized {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: err.Error(),
+			})
+		}
+
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	accessTokenDetails, err := utils.Token{}.CreateToken(h, tokenClaims.User, env.AccessTokenPrivateKey, env.AccessTokenExpires)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    *accessTokenDetails.Token,
+		Path:     "/",
+		MaxAge:   env.AccessTokenMaxAge * 60,
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "logged_in",
+		Value:    "true",
+		Path:     "/",
+		MaxAge:   env.AccessTokenMaxAge * 60,
+		Secure:   false,
+		HTTPOnly: false,
+		Domain:   "localhost",
+	})
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
+}
+
