@@ -1,17 +1,13 @@
 package middleware
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/VinukaThejana/auth/backend/config"
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
-	"github.com/VinukaThejana/auth/backend/models"
-	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/VinukaThejana/auth/backend/utils"
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 // CheckAuth is a middleware function that is used to check wether the user is authed
@@ -51,23 +47,7 @@ func CheckAuth(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	var user models.User
-	err = h.DB.DB.First(&user, "id = ?", tokenClaims.UserID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			log.Error(fmt.Errorf("user with the uid = %s does not exist in the database", tokenClaims.UserID), nil)
-			return c.Status(fiber.StatusUnauthorized).JSON(response{
-				Status: errors.ErrUnauthorized.Error(),
-			})
-		}
-
-		log.Error(err, nil)
-		return c.Status(fiber.StatusInternalServerError).JSON(response{
-			Status: errors.ErrInternalServerError.Error(),
-		})
-	}
-
-	c.Locals(config.Enums{}.USER(), schemas.FilterUserRecord(&user))
+	c.Locals(config.Enums{}.USER(), tokenClaims.User)
 	c.Locals(config.Enums{}.ACCESSTOKENUUID(), tokenClaims.TokenUUID)
 
 	return c.Next()
