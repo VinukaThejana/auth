@@ -64,7 +64,7 @@ func (Token) CreateToken(h *initialize.H, userID, privateKey string, ttl time.Du
 	}
 
 	ctx := context.TODO()
-	h.R.RS.Set(ctx, td.TokenUUID, userID, time.Duration(*td.ExpiresIn))
+	h.R.RS.Set(ctx, td.TokenUUID, userID, time.Unix(*td.ExpiresIn, 0).Sub(now))
 
 	return td, nil
 }
@@ -106,11 +106,11 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 	val := h.R.RS.Get(ctx, td.TokenUUID).Val()
 	if val != "" {
 		return nil, errors.ErrUnauthorized
-	} else {
-		if val == td.UserID {
-			return td, nil
-		}
-
-		return nil, errors.ErrUnauthorized
 	}
+
+	if val == td.UserID {
+		return td, nil
+	}
+
+	return nil, errors.ErrUnauthorized
 }
