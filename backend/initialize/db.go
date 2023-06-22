@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/VinukaThejana/auth/backend/config"
+	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/fatih/color"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,7 +28,7 @@ func (h *H) InitDB(env *config.Env) {
 	db.Logger = gormLogger.Default.LogMode(gormLogger.Info)
 
 	color.Blue("Running migrations ... ")
-	err = db.AutoMigrate()
+	err = db.AutoMigrate(models.User{})
 	if err != nil {
 		errMsg := "Error running migrations !"
 		log.Errorf(err, &errMsg)
