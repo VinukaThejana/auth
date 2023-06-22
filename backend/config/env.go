@@ -14,6 +14,8 @@ type Env struct {
 	DBPassword string `mapstructure:"POSTGRES_PASSWORD" validate:"required"`
 	DBName     string `mapstructure:"POSTGRES_DB" validate:"required"`
 
+	DSN string `mapstructure:"DATABASE_URL" validate:"required"`
+
 	RedisSessionURL     string `mapstructure:"REDIS_SESSION_URL" validate:"required"`
 	RedisRatelimiterURL string `mapstructure:"REDIS_RATELIMITER_URL" validate:"required"`
 
