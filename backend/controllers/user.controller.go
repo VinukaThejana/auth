@@ -13,6 +13,7 @@ import (
 // User is struct contaning the user related controllers
 type User struct{}
 
+// GetUser is a function that is used to get the details of the user
 func (User) GetUser(c *fiber.Ctx, h *initialize.H) error {
 	user := c.Locals(config.Enums{}.USER()).(schemas.User)
 	var payload models.User
