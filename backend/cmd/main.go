@@ -31,7 +31,7 @@ func init() {
 
 	h.InitDB(&env)
 	h.InitiRedis(&env)
-  h.InitStorage(&env)
+	h.InitStorage(&env)
 }
 
 func main() {
@@ -44,8 +44,8 @@ func main() {
 		AllowCredentials: true,
 		AllowMethods:     "*",
 	}))
-  app.Use(limiter.New(limiter.Config{
-    Max:        100,
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
 		Expiration: 1 * time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
@@ -57,31 +57,34 @@ func main() {
 		SkipSuccessfulRequests: false,
 		LimiterMiddleware:      limiter.SlidingWindow{},
 		Storage:                h.S.S,
-  }))
-  app.Get("/metrics", monitor.New(monitor.Config{
-    Title: "auth",
-  }))
+	}))
+	app.Get("/metrics", monitor.New(monitor.Config{
+		Title: "auth",
+	}))
 
-  authG := app.Group("/auth")
-  authG.Post("/register", func(c *fiber.Ctx) error {
-    return auth.Register(c, &h);
-  })
-  authG.Post("/login", func(c *fiber.Ctx) error {
-    return auth.Login(c, &h, &env)
-  })
-  authG.Post("/refresh", func(c *fiber.Ctx) error {
-    return auth.RefreshToken(c, &h, &env)
-  })
-  authG.Post("/refresh", func(c *fiber.Ctx) error {
-    return auth.RefreshToken(c, &h, &env)
-  })
+	authG := app.Group("/auth")
+	authG.Post("/register", func(c *fiber.Ctx) error {
+		return auth.Register(c, &h)
+	})
+	authG.Post("/login", func(c *fiber.Ctx) error {
+		return auth.Login(c, &h, &env)
+	})
+	authG.Post("/refresh", func(c *fiber.Ctx) error {
+		return auth.RefreshToken(c, &h, &env)
+	})
+	authG.Post("/refresh", func(c *fiber.Ctx) error {
+		return auth.RefreshToken(c, &h, &env)
+	})
 
-  userG := app.Group("/user", func(c *fiber.Ctx) error {
-    return middleware.CheckAuth(c, &h, &env)
-  })
-  userG.Get("/", func(c *fiber.Ctx) error {
-    return user.GetUser(c, &h)
-  })
+	userG := app.Group("/user", func(c *fiber.Ctx) error {
+		return middleware.CheckAuth(c, &h, &env)
+	})
+	userG.Get("/", func(c *fiber.Ctx) error {
+		return user.GetUser(c, &h)
+	})
+	app.Post("/validate/username", func(c *fiber.Ctx) error {
+		return user.ValidateUsername(c, &h)
+	})
 
-  log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)
+	log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)
 }
