@@ -50,6 +50,7 @@ func (Auth) Register(c *fiber.Ctx, h *initialize.H) error {
 
 	newUser := models.User{
 		Name:     payload.Name,
+		Username: payload.Username,
 		Email:    payload.Email,
 		Password: string(hashedPassword),
 	}
@@ -91,18 +92,34 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	}
 
 	var user models.User
-	result := h.DB.DB.First(&user, "email = ?", payload.Email)
-	if result.Error != nil {
-		if result.Error != gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusBadRequest).JSON(response{
-				Status: errors.ErrBadRequest.Error(),
+	if payload.Username != "" {
+		result := h.DB.DB.First(&user, "username = ?", payload.Username)
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusBadRequest).JSON(response{
+					Status: errors.ErrIncorrectCredentials.Error(),
+				})
+			}
+
+			log.Error(result.Error, nil)
+			return c.Status(fiber.StatusInternalServerError).JSON(response{
+				Status: errors.ErrInternalServerError.Error(),
 			})
 		}
+	} else {
+		result := h.DB.DB.First(&user, "email = ?", payload.Email)
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusBadRequest).JSON(response{
+					Status: errors.ErrIncorrectCredentials.Error(),
+				})
+			}
 
-		log.Error(result.Error, nil)
-		return c.Status(fiber.StatusInternalServerError).JSON(response{
-			Status: errors.ErrInternalServerError.Error(),
-		})
+			log.Error(result.Error, nil)
+			return c.Status(fiber.StatusInternalServerError).JSON(response{
+				Status: errors.ErrInternalServerError.Error(),
+			})
+		}
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
@@ -114,9 +131,10 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	}
 
 	accessTokenDetails, err := utils.Token{}.CreateToken(h, schemas.User{
-		ID:    user.ID.String(),
-		Name:  user.Name,
-		Email: user.Email,
+		ID:       user.ID.String(),
+		Name:     user.Name,
+		Username: user.Username,
+		Email:    user.Email,
 	}, env.AccessTokenPrivateKey, env.AccessTokenExpires)
 	if err != nil {
 		log.Error(err, nil)
@@ -126,9 +144,10 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	}
 
 	refreshTokenDetails, err := utils.Token{}.CreateToken(h, schemas.User{
-		ID:    user.ID.String(),
-		Name:  user.Name,
-		Email: user.Email,
+		ID:       user.ID.String(),
+		Name:     user.Name,
+		Username: user.Username,
+		Email:    user.Email,
 	}, env.RefreshTokenPrivateKey, env.RefreshTokenExpires)
 	if err != nil {
 		log.Error(err, nil)
@@ -228,6 +247,7 @@ func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	})
 }
 
+// Logout is a function that is used to logout the user
 func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {

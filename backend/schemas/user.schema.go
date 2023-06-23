@@ -1,6 +1,7 @@
 package schemas
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/models"
@@ -11,6 +12,7 @@ import (
 // RegisterInput is a struct that defines what the server expects from the user upon registration
 type RegisterInput struct {
 	Name                 string `json:"name" validate:"required,min=3,max=40"`
+	Username             string `json:"username" validate:"required,min=3,max=20"`
 	Email                string `json:"email" validate:"required,email"`
 	Password             string `json:"password" validate:"required,min=8,max=200"`
 	PasswordConfirmation string `json:"password_confirm" validate:"required,min=8,max=200"`
@@ -25,7 +27,8 @@ func (rI RegisterInput) Validate() (err error) {
 
 // LoginInput is a struct that defines what the server expects from the user upon login
 type LoginInput struct {
-	Email    string `json:"email" validate:"required,email"`
+	Email    string `json:"email" validate:"omitempty,email"`
+	Username string `json:"username" validate:"omitempty,min=3,max=20"`
 	Password string `json:"password" validate:"required,min=8,max=200"`
 }
 
@@ -33,14 +36,19 @@ type LoginInput struct {
 func (lI LoginInput) Validate() (err error) {
 	v := validator.New()
 	err = v.Struct(lI)
+	if lI.Email == "" && lI.Username == "" {
+		err = fmt.Errorf("username and email both cannot be empty")
+	}
+
 	return err
 }
 
 // User struct contians the most basic data that needs to be stored from a user
 type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 // UserResponse is a struct that contains all the relevant feilds of the models.User when sending the
@@ -48,6 +56,7 @@ type User struct {
 type UserResponse struct {
 	ID        uuid.UUID `json:"id,omitempty"`
 	Name      string    `json:"name,omitempty"`
+	Username  string    `json:"username,omitempty"`
 	Email     string    `json:"email,omitempty"`
 	Role      string    `json:"role,omitempty"`
 	Provider  string    `json:"provider"`
@@ -60,6 +69,7 @@ func FilterUserRecord(user *models.User) UserResponse {
 	return UserResponse{
 		ID:        *user.ID,
 		Name:      user.Name,
+		Username:  user.Username,
 		Email:     user.Email,
 		Role:      *user.Role,
 		Provider:  *user.Provider,

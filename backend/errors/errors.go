@@ -9,6 +9,7 @@ var (
 	ErrUnauthorized           = fmt.Errorf("unauthorized")
 	ErrAccessTokenNotProvided = fmt.Errorf("access_token_not_provided")
 	ErrBadRequest             = fmt.Errorf("bad_request")
+	ErrIncorrectCredentials   = fmt.Errorf("incorrect_credentials")
 	Okay                      = "okay"
 
 //revive:enable
