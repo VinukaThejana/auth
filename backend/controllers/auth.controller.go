@@ -83,7 +83,7 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	if err := payload.Vaidate(); err != nil {
+	if err := payload.Validate(); err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusBadRequest).JSON(response{
 			Status: errors.ErrBadRequest.Error(),

@@ -30,7 +30,7 @@ type LoginInput struct {
 }
 
 // Validate is a function that is used to vaidate user input upon login
-func (lI LoginInput) Vaidate() (err error) {
+func (lI LoginInput) Validate() (err error) {
 	v := validator.New()
 	err = v.Struct(lI)
 	return err
