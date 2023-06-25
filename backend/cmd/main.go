@@ -85,6 +85,17 @@ func main() {
 	userG.Get("/", func(c *fiber.Ctx) error {
 		return user.GetUser(c, &h)
 	})
+	userG.Route("/update", func(router fiber.Router) {
+		router.Post("/email", func(c *fiber.Ctx) error {
+			return user.UpdateEmail(c, &h)
+		})
+		router.Post("/username", func(c *fiber.Ctx) error {
+			return user.UpdateUsername(c, &h)
+		})
+		router.Post("/name", func(c *fiber.Ctx) error {
+			return user.UpdateName(c, &h)
+		})
+	})
 
 	log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)
 }
