@@ -75,15 +75,15 @@ func main() {
 	authG.Post("/refresh", func(c *fiber.Ctx) error {
 		return auth.RefreshToken(c, &h, &env)
 	})
+	authG.Post("/validate/username", func(c *fiber.Ctx) error {
+		return auth.CheckUsername(c, &h)
+	})
 
 	userG := app.Group("/user", func(c *fiber.Ctx) error {
 		return middleware.CheckAuth(c, &h, &env)
 	})
 	userG.Get("/", func(c *fiber.Ctx) error {
 		return user.GetUser(c, &h)
-	})
-	app.Post("/validate/username", func(c *fiber.Ctx) error {
-		return user.ValidateUsername(c, &h)
 	})
 
 	log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)

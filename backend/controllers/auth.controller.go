@@ -293,3 +293,39 @@ func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		Status: errors.Okay,
 	})
 }
+
+// CheckUsername is a function that is used to check wether the provided username is available
+// in the platform
+func (Auth) CheckUsername(c *fiber.Ctx, h *initialize.H) error {
+	var payload struct {
+		Username string `json:"username"`
+	}
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	type response struct {
+		Available bool `json:"available"`
+	}
+
+	var user models.User
+	result := h.DB.DB.First(&user, "username = ?", payload.Username)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusOK).JSON(response{
+				Available: true,
+			})
+		}
+
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Available: false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Available: false,
+	})
+}
