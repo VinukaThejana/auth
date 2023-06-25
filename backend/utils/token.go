@@ -8,7 +8,6 @@ import (
 
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
-	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -21,12 +20,12 @@ type Token struct{}
 type TokenDetails struct {
 	Token     *string
 	TokenUUID string
-	User      schemas.User
+	UserID    string
 	ExpiresIn *int64
 }
 
 // CreateToken is a function that is used to create a token
-func (Token) CreateToken(h *initialize.H, user schemas.User, privateKey string, ttl time.Duration) (*TokenDetails, error) {
+func (Token) CreateToken(h *initialize.H, userID, privateKey string, ttl time.Duration) (*TokenDetails, error) {
 	uid, err := uuid.NewUUID()
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func (Token) CreateToken(h *initialize.H, user schemas.User, privateKey string, 
 
 	*td.ExpiresIn = now.Add(ttl).Unix()
 	td.TokenUUID = uid.String()
-	td.User = user
+	td.UserID = userID
 
 	decodePrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -53,16 +52,11 @@ func (Token) CreateToken(h *initialize.H, user schemas.User, privateKey string, 
 	}
 
 	claims := make(jwt.MapClaims)
-	claims["sub"] = user.ID
+	claims["sub"] = userID
 	claims["token_uuid"] = td.TokenUUID
 	claims["exp"] = td.ExpiresIn
 	claims["iat"] = now.Unix()
 	claims["nbf"] = now.Unix()
-
-	// User related data
-	claims["id"] = td.User.ID
-	claims["name"] = td.User.Name
-	claims["email"] = td.User.Email
 
 	*td.Token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(key)
 	if err != nil {
@@ -70,7 +64,7 @@ func (Token) CreateToken(h *initialize.H, user schemas.User, privateKey string, 
 	}
 
 	ctx := context.TODO()
-	h.R.RS.Set(ctx, td.TokenUUID, user.ID, time.Unix(*td.ExpiresIn, 0).Sub(now))
+	h.R.RS.Set(ctx, td.TokenUUID, userID, time.Unix(*td.ExpiresIn, 0).Sub(now))
 
 	return td, nil
 }
@@ -105,11 +99,7 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 
 	td := &TokenDetails{
 		TokenUUID: fmt.Sprint(claims["token_uuid"]),
-		User: schemas.User{
-			ID:    fmt.Sprint(claims["id"]),
-			Name:  fmt.Sprint(claims["name"]),
-			Email: fmt.Sprint(claims["email"]),
-		},
+		UserID:    fmt.Sprint(claims["sub"]),
 	}
 
 	ctx := context.TODO()
@@ -118,7 +108,7 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 		return nil, errors.ErrUnauthorized
 	}
 
-	if val == td.User.ID {
+	if val == td.UserID {
 		return td, nil
 	}
 
