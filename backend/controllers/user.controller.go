@@ -15,9 +15,9 @@ type User struct{}
 
 // GetUser is a function that is used to get the details of the user
 func (User) GetUser(c *fiber.Ctx, h *initialize.H) error {
-	user := c.Locals(config.Enums{}.USER()).(schemas.User)
+	userID := c.Locals(config.Enums{}.USER()).(string)
 	var payload models.User
-	if err := h.DB.DB.First(&payload, "id = ?", user.ID).Error; err != nil {
+	if err := h.DB.DB.First(&payload, "id = ?", userID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{
 				Status: errors.ErrUnauthorized.Error(),
