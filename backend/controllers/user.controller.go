@@ -7,6 +7,7 @@ import (
 	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -32,5 +33,106 @@ func (User) GetUser(c *fiber.Ctx, h *initialize.H) error {
 
 	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 		"user": schemas.FilterUserRecord(&payload),
+	})
+}
+
+// UpdateEmail is a function that is used to update the users email address
+func (User) UpdateEmail(c *fiber.Ctx, h *initialize.H) error {
+	var payload struct {
+		Email string `json:"email" validate:"required,email"`
+	}
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	userID, err := uuid.Parse(c.Locals(config.Enums{}.USER()).(string))
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID).Update("email", payload.Email).Error
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusOK).JSON(response{
+			Status: errors.Okay,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
+}
+
+// UpdateUsername is a function that is used to update the username of the user
+func (User) UpdateUsername(c *fiber.Ctx, h *initialize.H) error {
+	var payload struct {
+		Username string `json:"username" validate:"required,min=3,max=15"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	userID, err := uuid.Parse(c.Locals(config.Enums{}.USER()).(string))
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID).Update("username", payload.Username).Error
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusOK).JSON(response{
+			Status: errors.Okay,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
+}
+
+// UpdateName is a function that is used to update the name of the user
+func (User) UpdateName(c *fiber.Ctx, h *initialize.H) error {
+	var payload struct {
+		Name string `json:"name" validate:"required,min=3,max=30"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	userID, err := uuid.Parse(c.Locals(config.Enums{}.USER()).(string))
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID).Update("name", payload.Name).Error
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusOK).JSON(response{
+			Status: errors.Okay,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
 	})
 }
