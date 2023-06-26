@@ -5,15 +5,19 @@ import (
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/config"
+	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
+	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/VinukaThejana/auth/backend/templates"
 	"github.com/google/uuid"
 	"github.com/resendlabs/resend-go"
+	"gorm.io/gorm"
 )
 
 var (
-	resendEmailFrom    = "onboarding@resend.dev"
-	resendReplyToEmail = "onboarding@resend.dev"
+	resendEmailFrom                 = "onboarding@resend.dev"
+	resendReplyToEmail              = "onboarding@resend.dev"
+	emailConfirmationExpirationTime = 30 * 60 * time.Second
 )
 
 // Email is a struct that contains email related functionality
@@ -23,7 +27,7 @@ type Email struct{}
 func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID string) {
 	token := uuid.New()
 	ctx := context.TODO()
-	h.R.RE.SetNX(ctx, token.String(), userID, 30*60*time.Second)
+	h.R.RE.SetNX(ctx, token.String(), userID, emailConfirmationExpirationTime)
 
 	emailTemplate, err := templates.Email{}.GetEmailConfirmationTmpl(token.String())
 	if err != nil {
@@ -43,4 +47,43 @@ func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID st
 		log.Error(err, nil)
 	}
 	log.Success(send.Id)
+}
+
+// ConfirmEmail is a function that is used to confirm the email of the user with the provided token
+func (Email) ConfirmEmail(h *initialize.H, token, userID string) error {
+	_, err := uuid.Parse(token)
+	if err != nil {
+		return errors.ErrBadRequest
+	}
+
+	ctx := context.TODO()
+	val := h.R.RE.Get(ctx, token).Val()
+	if val == "" {
+		return errors.ErrEmailConfirmationExpired
+	}
+
+	if userID != val {
+		return errors.ErrUnauthorized
+	}
+
+	// TODO: Add db email confirmation logic here
+
+	h.R.RE.Del(ctx, token)
+	return nil
+}
+
+// ResendConfirmaton is a function that is used to resend the email confirmation
+func (Email) ResendConfirmaton(h *initialize.H, env *config.Env, userID string) error {
+	var user models.User
+	err := h.DB.DB.First(&user, "id = ?", userID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrUnauthorized
+		}
+
+		return err
+	}
+
+	Email{}.SendConfirmation(h, env, user.Email, userID)
+	return nil
 }
