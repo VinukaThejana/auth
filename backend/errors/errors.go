@@ -10,16 +10,17 @@ import (
 
 var (
 	//revive:disable
-	ErrInternalServerError    = fmt.Errorf("internal_server_error")
-	ErrUnauthorized           = fmt.Errorf("unauthorized")
-	ErrAccessTokenNotProvided = fmt.Errorf("access_token_not_provided")
-	ErrBadRequest             = fmt.Errorf("bad_request")
-	ErrIncorrectCredentials   = fmt.Errorf("incorrect_credentials")
-	ErrRefreshTokenExpired    = fmt.Errorf("refresh_token_expired")
-	ErrAccessTokenExpired     = fmt.Errorf("access_token_expired")
-	ErrUsernameAlreadyUsed    = fmt.Errorf("username_already_used")
-	ErrEmailAlreadyUsed       = fmt.Errorf("email_already_used")
-	Okay                      = "okay"
+	ErrInternalServerError      = fmt.Errorf("internal_server_error")
+	ErrUnauthorized             = fmt.Errorf("unauthorized")
+	ErrAccessTokenNotProvided   = fmt.Errorf("access_token_not_provided")
+	ErrBadRequest               = fmt.Errorf("bad_request")
+	ErrIncorrectCredentials     = fmt.Errorf("incorrect_credentials")
+	ErrRefreshTokenExpired      = fmt.Errorf("refresh_token_expired")
+	ErrAccessTokenExpired       = fmt.Errorf("access_token_expired")
+	ErrUsernameAlreadyUsed      = fmt.Errorf("username_already_used")
+	ErrEmailAlreadyUsed         = fmt.Errorf("email_already_used")
+	ErrEmailConfirmationExpired = fmt.Errorf("email_confirmation_expired")
+	Okay                        = "okay"
 
 //revive:enable
 )
