@@ -15,6 +15,8 @@ var (
 	ErrAccessTokenNotProvided = fmt.Errorf("access_token_not_provided")
 	ErrBadRequest             = fmt.Errorf("bad_request")
 	ErrIncorrectCredentials   = fmt.Errorf("incorrect_credentials")
+	ErrRefreshTokenExpired    = fmt.Errorf("refresh_token_expired")
+	ErrAccessTokenExpired     = fmt.Errorf("access_token_expired")
 	Okay                      = "okay"
 
 //revive:enable
@@ -31,6 +33,18 @@ func (CheckDBError) DuplicateKey(err error) bool {
 		if pgErr.Code == "23505" {
 			return true
 		}
+	}
+
+	return false
+}
+
+// CheckTokenError is a struct that is used to handle token related errors
+type CheckTokenError struct{}
+
+// Expired is a funciton that is used to identify wether the token is expired or not
+func (CheckTokenError) Expired(err error) bool {
+	if err.Error() == "token has invalid claims: token is expired" {
+		return true
 	}
 
 	return false
