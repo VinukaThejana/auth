@@ -11,6 +11,7 @@ import (
 type Redis struct {
 	RR *redis.Client
 	RS *redis.Client
+	RE *redis.Client
 }
 
 func connnect(addrr string) *redis.Client {
@@ -31,5 +32,6 @@ func (h *H) InitiRedis(env *config.Env) {
 	h.R = &Redis{
 		RS: connnect(env.RedisSessionURL),
 		RR: connnect(env.RedisRatelimiterURL),
+		RE: connnect(env.RedisEmailURL),
 	}
 }
