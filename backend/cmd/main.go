@@ -67,7 +67,7 @@ func main() {
 
 	authG := app.Group("/auth")
 	authG.Post("/register", func(c *fiber.Ctx) error {
-		return auth.Register(c, &h)
+		return auth.Register(c, &h, &env)
 	})
 	authG.Post("/login", func(c *fiber.Ctx) error {
 		return auth.Login(c, &h, &env)
