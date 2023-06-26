@@ -57,7 +57,7 @@ func (Auth) Register(c *fiber.Ctx, h *initialize.H) error {
 
 	result := h.DB.DB.Create(&newUser)
 	if result.Error != nil {
-		if result.Error == gorm.ErrDuplicatedKey {
+		if ok := (errors.CheckDBError{}.DuplicateKey(result.Error)); ok {
 			return c.Status(fiber.StatusBadRequest).JSON(response{
 				Status: errors.ErrBadRequest.Error(),
 			})
