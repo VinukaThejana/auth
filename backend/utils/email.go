@@ -20,14 +20,14 @@ var (
 type Email struct{}
 
 // SendConfirmation is a function that is used to send a confirmation email to the client
-func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID string) error {
+func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID string) {
 	token := uuid.New()
 	ctx := context.TODO()
 	h.R.RE.SetNX(ctx, token.String(), userID, 30*60*time.Second)
 
 	emailTemplate, err := templates.Email{}.GetEmailConfirmationTmpl(token.String())
 	if err != nil {
-		return err
+		log.Error(err, nil)
 	}
 
 	client := resend.NewClient(env.ResendAPIKey)
@@ -40,9 +40,7 @@ func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID st
 	}
 	send, err := client.Emails.Send(params)
 	if err != nil {
-		return err
+		log.Error(err, nil)
 	}
 	log.Success(send.Id)
-
-	return nil
 }
