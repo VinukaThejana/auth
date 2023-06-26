@@ -61,6 +61,9 @@ func main() {
 	app.Get("/metrics", monitor.New(monitor.Config{
 		Title: "auth",
 	}))
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Redirect("https://app.theneo.io/szeeta/auth")
+	})
 
 	authG := app.Group("/auth")
 	authG.Post("/register", func(c *fiber.Ctx) error {
