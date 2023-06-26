@@ -104,7 +104,7 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 
 	ctx := context.TODO()
 	val := h.R.RS.Get(ctx, td.TokenUUID).Val()
-	if val != "" {
+	if val == "" {
 		return nil, errors.ErrUnauthorized
 	}
 
