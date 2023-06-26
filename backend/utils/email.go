@@ -33,7 +33,7 @@ func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID st
 	client := resend.NewClient(env.ResendAPIKey)
 	params := &resend.SendEmailRequest{
 		From:    resendEmailFrom,
-		To:      []string{"vinuka.t@pm.me"},
+		To:      []string{email},
 		Html:    emailTemplate,
 		Subject: "Email confirmation",
 		ReplyTo: resendReplyToEmail,
