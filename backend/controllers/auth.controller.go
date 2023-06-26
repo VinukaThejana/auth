@@ -19,7 +19,7 @@ import (
 type Auth struct{}
 
 // Register is a function that is used to register a user with the backend
-func (Auth) Register(c *fiber.Ctx, h *initialize.H) error {
+func (Auth) Register(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	var payload *schemas.RegisterInput
 	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(response{
@@ -68,6 +68,8 @@ func (Auth) Register(c *fiber.Ctx, h *initialize.H) error {
 			Status: errors.ErrInternalServerError.Error(),
 		})
 	}
+
+	go utils.Email{}.SendConfirmation(h, env, newUser.Email, newUser.ID.String())
 
 	return c.Status(fiber.StatusOK).JSON(response{
 		Status: errors.Okay,
