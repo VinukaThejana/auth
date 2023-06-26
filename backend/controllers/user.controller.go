@@ -48,6 +48,25 @@ func (User) UpdateEmail(c *fiber.Ctx, h *initialize.H) error {
 		})
 	}
 
+	var user models.User
+	result := h.DB.DB.First(&user, "email = ?", payload.Email)
+	if result.Error == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrEmailAlreadyUsed.Error(),
+		})
+	}
+	if result.Error != gorm.ErrRecordNotFound {
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	if ok := log.Validate(payload); !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
 	userID, err := uuid.Parse(c.Locals(config.Enums{}.USER()).(string))
 	if err != nil {
 		log.Error(err, nil)
@@ -81,6 +100,24 @@ func (User) UpdateUsername(c *fiber.Ctx, h *initialize.H) error {
 			Status: errors.ErrBadRequest.Error(),
 		})
 	}
+	if ok := log.Validate(payload); !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	var user models.User
+	result := h.DB.DB.First(&user, "username = ?", payload.Username)
+	if result.Error == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrUsernameAlreadyUsed.Error(),
+		})
+	}
+	if result.Error != gorm.ErrRecordNotFound {
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
 
 	userID, err := uuid.Parse(c.Locals(config.Enums{}.USER()).(string))
 	if err != nil {
@@ -111,6 +148,11 @@ func (User) UpdateName(c *fiber.Ctx, h *initialize.H) error {
 
 	if err := c.BodyParser(&payload); err != nil {
 		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+	if ok := log.Validate(payload); !ok {
 		return c.Status(fiber.StatusBadRequest).JSON(response{
 			Status: errors.ErrBadRequest.Error(),
 		})

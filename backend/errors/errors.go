@@ -17,6 +17,8 @@ var (
 	ErrIncorrectCredentials   = fmt.Errorf("incorrect_credentials")
 	ErrRefreshTokenExpired    = fmt.Errorf("refresh_token_expired")
 	ErrAccessTokenExpired     = fmt.Errorf("access_token_expired")
+	ErrUsernameAlreadyUsed    = fmt.Errorf("username_already_used")
+	ErrEmailAlreadyUsed       = fmt.Errorf("email_already_used")
 	Okay                      = "okay"
 
 //revive:enable
