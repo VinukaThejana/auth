@@ -198,6 +198,12 @@ func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 			})
 		}
 
+		if ok := (errors.CheckTokenError{}.Expired(err)); ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: errors.ErrRefreshTokenExpired.Error(),
+			})
+		}
+
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
 			Status: errors.ErrInternalServerError.Error(),
@@ -251,6 +257,12 @@ func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		if err == errors.ErrUnauthorized {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{
 				Status: errors.ErrUnauthorized.Error(),
+			})
+		}
+
+		if ok := (errors.CheckTokenError{}.Expired(err)); ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: errors.ErrAccessTokenExpired.Error(),
 			})
 		}
 
