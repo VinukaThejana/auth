@@ -18,6 +18,7 @@ type Env struct {
 
 	RedisSessionURL     string `mapstructure:"REDIS_SESSION_URL" validate:"required"`
 	RedisRatelimiterURL string `mapstructure:"REDIS_RATELIMITER_URL" validate:"required"`
+	RedisEmailURL       string `mapstructure:"REDIS_EMAIL_URL" validate:"required"`
 
 	Port string `mapstructure:"PORT" validate:"required"`
 
