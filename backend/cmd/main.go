@@ -24,6 +24,7 @@ var (
 
 	auth controllers.Auth
 	user controllers.User
+  email controllers.Email
 )
 
 func init() {
@@ -96,6 +97,18 @@ func main() {
 			return user.UpdateName(c, &h)
 		})
 	})
+
+  emailG := app.Group("/email", func(c *fiber.Ctx) error {
+    return middleware.CheckAuth(c, &h, &env)
+  })
+  emailG.Route("/confirmation", func(router fiber.Router) {
+    router.Get("/", func(c *fiber.Ctx) error {
+      return email.ConfirmEmail(c, &h, &env)
+    })
+    router.Get("/resend", func(c *fiber.Ctx) error {
+      return email.ResendEmailConfirmation(c, &h, &env)
+    })
+  })
 
 	log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)
 }
