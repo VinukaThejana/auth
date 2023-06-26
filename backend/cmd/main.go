@@ -72,9 +72,6 @@ func main() {
 	authG.Post("/refresh", func(c *fiber.Ctx) error {
 		return auth.RefreshToken(c, &h, &env)
 	})
-	authG.Post("/refresh", func(c *fiber.Ctx) error {
-		return auth.RefreshToken(c, &h, &env)
-	})
 	authG.Post("/validate/username", func(c *fiber.Ctx) error {
 		return auth.CheckUsername(c, &h)
 	})
