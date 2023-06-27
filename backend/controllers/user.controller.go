@@ -6,6 +6,7 @@ import (
 	"github.com/VinukaThejana/auth/backend/initialize"
 	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/VinukaThejana/auth/backend/schemas"
+	"github.com/VinukaThejana/auth/backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -37,7 +38,7 @@ func (User) GetUser(c *fiber.Ctx, h *initialize.H) error {
 }
 
 // UpdateEmail is a function that is used to update the users email address
-func (User) UpdateEmail(c *fiber.Ctx, h *initialize.H) error {
+func (User) UpdateEmail(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	var payload struct {
 		Email string `json:"email" validate:"required,email"`
 	}
@@ -75,13 +76,19 @@ func (User) UpdateEmail(c *fiber.Ctx, h *initialize.H) error {
 		})
 	}
 
-	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID).Update("email", payload.Email).Error
+	verified := false
+	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID.String()).Updates(models.User{
+		Email:    payload.Email,
+		Verified: &verified,
+	}).Error
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusOK).JSON(response{
 			Status: errors.Okay,
 		})
 	}
+
+	go utils.Email{}.SendConfirmation(h, env, payload.Email, userID.String())
 
 	return c.Status(fiber.StatusOK).JSON(response{
 		Status: errors.Okay,

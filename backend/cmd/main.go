@@ -22,9 +22,9 @@ var (
 	env config.Env
 	h   initialize.H
 
-	auth controllers.Auth
-	user controllers.User
-  email controllers.Email
+	auth  controllers.Auth
+	user  controllers.User
+	email controllers.Email
 )
 
 func init() {
@@ -88,7 +88,7 @@ func main() {
 	})
 	userG.Route("/update", func(router fiber.Router) {
 		router.Post("/email", func(c *fiber.Ctx) error {
-			return user.UpdateEmail(c, &h)
+			return user.UpdateEmail(c, &h, &env)
 		})
 		router.Post("/username", func(c *fiber.Ctx) error {
 			return user.UpdateUsername(c, &h)
@@ -98,17 +98,17 @@ func main() {
 		})
 	})
 
-  emailG := app.Group("/email", func(c *fiber.Ctx) error {
-    return middleware.CheckAuth(c, &h, &env)
-  })
-  emailG.Route("/confirmation", func(router fiber.Router) {
-    router.Get("/", func(c *fiber.Ctx) error {
-      return email.ConfirmEmail(c, &h, &env)
-    })
-    router.Get("/resend", func(c *fiber.Ctx) error {
-      return email.ResendEmailConfirmation(c, &h, &env)
-    })
-  })
+	emailG := app.Group("/email", func(c *fiber.Ctx) error {
+		return middleware.CheckAuth(c, &h, &env)
+	})
+	emailG.Route("/confirmation", func(router fiber.Router) {
+		router.Get("/", func(c *fiber.Ctx) error {
+			return email.ConfirmEmail(c, &h, &env)
+		})
+		router.Get("/resend", func(c *fiber.Ctx) error {
+			return email.ResendEmailConfirmation(c, &h, &env)
+		})
+	})
 
 	log.Errorf(app.Listen(fmt.Sprintf(":%s", env.Port)), nil)
 }

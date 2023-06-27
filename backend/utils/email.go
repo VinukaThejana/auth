@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/config"
@@ -27,7 +29,7 @@ type Email struct{}
 func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID string) {
 	token := uuid.New()
 	ctx := context.TODO()
-	h.R.RE.SetNX(ctx, token.String(), userID, emailConfirmationExpirationTime)
+	h.R.RE.SetNX(ctx, token.String(), fmt.Sprintf("%s+%s", userID, email), emailConfirmationExpirationTime)
 
 	emailTemplate, err := templates.Email{}.GetEmailConfirmationTmpl(token.String())
 	if err != nil {
@@ -51,6 +53,11 @@ func (Email) SendConfirmation(h *initialize.H, env *config.Env, email, userID st
 
 // ConfirmEmail is a function that is used to confirm the email of the user with the provided token
 func (Email) ConfirmEmail(h *initialize.H, token, userID string) error {
+	var user struct {
+		ID    string
+		Email string
+	}
+
 	_, err := uuid.Parse(token)
 	if err != nil {
 		return errors.ErrBadRequest
@@ -62,11 +69,24 @@ func (Email) ConfirmEmail(h *initialize.H, token, userID string) error {
 		return errors.ErrEmailConfirmationExpired
 	}
 
-	if userID != val {
+	var found bool
+	user.ID, user.Email, found = strings.Cut(val, "+")
+	if !found {
 		return errors.ErrUnauthorized
 	}
 
-	// TODO: Add db email confirmation logic here
+	if user.ID != userID {
+		return errors.ErrUnauthorized
+	}
+
+	err = h.DB.DB.Model(&models.User{}).Where("id = ?", userID).Where("email = ?", user.Email).Update("verified", true).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrUnauthorized
+		}
+
+		return err
+	}
 
 	h.R.RE.Del(ctx, token)
 	return nil
