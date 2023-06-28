@@ -1,3 +1,4 @@
 services/.env
 backend/.env
 backend/tmp
+.DS_Store
