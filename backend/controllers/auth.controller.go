@@ -132,7 +132,7 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	accessTokenDetails, err := utils.Token{}.CreateToken(h, user.ID.String(), env.AccessTokenPrivateKey, env.AccessTokenExpires)
+	accessTokenDetails, err := utils.Token{}.CreateAccessToken(h, user.ID.String(), env.AccessTokenPrivateKey, env.AccessTokenExpires)
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
@@ -140,7 +140,12 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	refreshTokenDetails, err := utils.Token{}.CreateToken(h, user.ID.String(), env.RefreshTokenPrivateKey, env.RefreshTokenExpires)
+	refreshTokenDetails, err := utils.Token{}.CreateRefreshToken(h, user.ID.String(), env.RefreshTokenPrivateKey, env.RefreshTokenExpires, struct {
+		IPAddress string
+		Location  string
+		Device    string
+		OS        string
+	}{})
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
@@ -212,7 +217,7 @@ func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	accessTokenDetails, err := utils.Token{}.CreateToken(h, tokenClaims.UserID, env.AccessTokenPrivateKey, env.AccessTokenExpires)
+	accessTokenDetails, err := utils.Token{}.CreateAccessToken(h, tokenClaims.UserID, env.AccessTokenPrivateKey, env.AccessTokenExpires)
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
