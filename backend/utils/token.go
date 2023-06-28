@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -24,8 +25,89 @@ type TokenDetails struct {
 	ExpiresIn *int64
 }
 
-// CreateToken is a function that is used to create a token
-func (Token) CreateToken(h *initialize.H, userID, privateKey string, ttl time.Duration) (*TokenDetails, error) {
+// CreateRefreshToken is a function that is used to create a refresh token
+func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl time.Duration, reqData struct {
+	IPAddress string
+	Location  string
+	Device    string
+	OS        string
+},
+) (*TokenDetails, error) {
+	var refreshTokenDetails struct {
+		UserID    string
+		IPAddress string
+		Location  string
+		Device    string
+		OS        string
+		LoginAt   time.Time
+	}
+
+	uid, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	td := &TokenDetails{
+		ExpiresIn: new(int64),
+		Token:     new(string),
+	}
+
+	*td.ExpiresIn = now.Add(ttl).Unix()
+	td.TokenUUID = uid.String()
+	td.UserID = userID
+
+	decodePrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(decodePrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	claims := make(jwt.MapClaims)
+	claims["sub"] = userID
+	claims["token_uuid"] = td.TokenUUID
+	claims["exp"] = td.ExpiresIn
+	claims["iat"] = now.Unix()
+	claims["nbf"] = now.Unix()
+
+	*td.Token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(key)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenDetails = struct {
+		UserID    string
+		IPAddress string
+		Location  string
+		Device    string
+		OS        string
+		LoginAt   time.Time
+	}{
+		UserID:    userID,
+		LoginAt:   now,
+		IPAddress: reqData.IPAddress,
+		Location:  reqData.Location,
+		OS:        reqData.OS,
+		Device:    reqData.Device,
+	}
+
+	tokenVal, err := json.Marshal(refreshTokenDetails)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.TODO()
+	h.R.RS.Set(ctx, td.TokenUUID, string(tokenVal), time.Unix(*td.ExpiresIn, 0).Sub(now))
+
+	return td, nil
+}
+
+// CreateAccessToken is a function that is used to create a access token
+func (Token) CreateAccessToken(h *initialize.H, userID, privateKey string, ttl time.Duration) (*TokenDetails, error) {
 	uid, err := uuid.NewUUID()
 	if err != nil {
 		return nil, err
