@@ -9,6 +9,7 @@ import (
 
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
+	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -27,20 +28,14 @@ type TokenDetails struct {
 
 // CreateRefreshToken is a function that is used to create a refresh token
 func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl time.Duration, reqData struct {
-	IPAddress string
-	Location  string
-	Device    string
-	OS        string
+	IPAddress       string
+	Location        string
+	Device          string
+	OS              string
+	AccessTokenUUID string
 },
 ) (*TokenDetails, error) {
-	var refreshTokenDetails struct {
-		UserID    string
-		IPAddress string
-		Location  string
-		Device    string
-		OS        string
-		LoginAt   time.Time
-	}
+	var refreshTokenDetails schemas.RefreshTokenDetails
 
 	uid, err := uuid.NewUUID()
 	if err != nil {
@@ -79,20 +74,14 @@ func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl 
 		return nil, err
 	}
 
-	refreshTokenDetails = struct {
-		UserID    string
-		IPAddress string
-		Location  string
-		Device    string
-		OS        string
-		LoginAt   time.Time
-	}{
-		UserID:    userID,
-		LoginAt:   now,
-		IPAddress: reqData.IPAddress,
-		Location:  reqData.Location,
-		OS:        reqData.OS,
-		Device:    reqData.Device,
+	refreshTokenDetails = schemas.RefreshTokenDetails{
+		UserID:          userID,
+		LoginAt:         now,
+		IPAddress:       reqData.IPAddress,
+		Location:        reqData.Location,
+		OS:              reqData.OS,
+		Device:          reqData.Device,
+		AccessTokenUUID: reqData.AccessTokenUUID,
 	}
 
 	tokenVal, err := json.Marshal(refreshTokenDetails)
