@@ -141,7 +141,7 @@ func (Token) CreateAccessToken(h *initialize.H, userID, privateKey string, ttl t
 }
 
 // ValidateToken is a function that is used to validate the passed token
-func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDetails, error) {
+func (Token) ValidateToken(h *initialize.H, token, publicKey string, isAccessToken bool) (*TokenDetails, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return nil, err
@@ -179,7 +179,21 @@ func (Token) ValidateToken(h *initialize.H, token, publicKey string) (*TokenDeta
 		return nil, errors.ErrUnauthorized
 	}
 
-	if val == td.UserID {
+	if isAccessToken {
+		if val == td.UserID {
+			return td, nil
+		}
+
+		return nil, errors.ErrUnauthorized
+	}
+
+	var refreshTokenDetails schemas.RefreshTokenDetails
+	err = json.Unmarshal([]byte(val), &refreshTokenDetails)
+	if err != nil {
+		return nil, errors.ErrInternalServerError
+	}
+
+	if refreshTokenDetails.UserID == td.UserID {
 		return td, nil
 	}
 

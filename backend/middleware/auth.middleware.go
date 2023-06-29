@@ -33,7 +33,7 @@ func CheckAuth(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	tokenClaims, err := utils.Token{}.ValidateToken(h, accessToken, env.AccessTokenPublicKey)
+	tokenClaims, err := utils.Token{}.ValidateToken(h, accessToken, env.AccessTokenPublicKey, true)
 	if err != nil {
 		if err == errors.ErrUnauthorized {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{
