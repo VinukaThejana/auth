@@ -179,9 +179,13 @@ func (Token) ValidateAccessToken(h *initialize.H, token, publicKey string) (*Tok
 }
 
 // DeleteToken is a function to delete a token
-func (Token) DeleteToken(h *initialize.H, token string) error {
-	ctx := context.Background()
-	err := h.R.RS.Del(ctx, token).Err()
+func (Token) DeleteToken(h *initialize.H, refreshTokenUUID, accessTokenUUID string) error {
+	ctx := context.TODO()
+
+	pipe := h.R.RS.Pipeline()
+	pipe.Del(ctx, refreshTokenUUID)
+	pipe.Del(ctx, accessTokenUUID)
+	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return err
 	}
