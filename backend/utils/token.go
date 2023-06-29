@@ -140,60 +140,38 @@ func (Token) CreateAccessToken(h *initialize.H, userID, privateKey string, ttl t
 	return td, nil
 }
 
-// ValidateToken is a function that is used to validate the passed token
-func (Token) ValidateToken(h *initialize.H, token, publicKey string, isAccessToken bool) (*TokenDetails, error) {
-	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
+// ValidateRefreshToken is a fucntion that is used to validate the refresh token
+func (Token) ValidateRefreshToken(h *initialize.H, token, publicKey string) (*TokenDetails, *schemas.RefreshTokenDetails, error) {
+	td, val, err := validateToken(h, token, publicKey)
 	if err != nil {
-		return nil, err
-	}
-
-	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected method : %s", t.Header["alg"])
-		}
-
-		return key, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok || !parsedToken.Valid {
-		return nil, fmt.Errorf("Validate : invalid token")
-	}
-
-	td := &TokenDetails{
-		TokenUUID: fmt.Sprint(claims["token_uuid"]),
-		UserID:    fmt.Sprint(claims["sub"]),
-	}
-
-	ctx := context.TODO()
-	val := h.R.RS.Get(ctx, td.TokenUUID).Val()
-	if val == "" {
-		return nil, errors.ErrUnauthorized
-	}
-
-	if isAccessToken {
-		if val == td.UserID {
-			return td, nil
-		}
-
-		return nil, errors.ErrUnauthorized
+		return nil, nil, err
+	} else if val == nil {
+		return nil, nil, errors.ErrInternalServerError
 	}
 
 	var refreshTokenDetails schemas.RefreshTokenDetails
-	err = json.Unmarshal([]byte(val), &refreshTokenDetails)
+	err = json.Unmarshal([]byte(*val), &refreshTokenDetails)
 	if err != nil {
-		return nil, errors.ErrInternalServerError
+		return nil, nil, errors.ErrInternalServerError
 	}
 
 	if refreshTokenDetails.UserID == td.UserID {
+		return td, &refreshTokenDetails, nil
+	}
+
+	return nil, nil, errors.ErrUnauthorized
+}
+
+// ValidateAccessToken is a function that is  used to validate the access token
+func (Token) ValidateAccessToken(h *initialize.H, token, publicKey string) (*TokenDetails, error) {
+	td, val, err := validateToken(h, token, publicKey)
+	if err != nil {
+		return nil, err
+	} else if val == nil {
+		return nil, errors.ErrInternalServerError
+	}
+
+	if val == &td.UserID {
 		return td, nil
 	}
 
@@ -209,4 +187,45 @@ func (Token) DeleteToken(h *initialize.H, token string) error {
 	}
 
 	return nil
+}
+
+func validateToken(h *initialize.H, token, publicKey string) (*TokenDetails, *string, error) {
+	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected method : %s", t.Header["alg"])
+		}
+
+		return key, nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok || !parsedToken.Valid {
+		return nil, nil, fmt.Errorf("Validate : invalid token")
+	}
+
+	td := &TokenDetails{
+		TokenUUID: fmt.Sprint(claims["token_uuid"]),
+		UserID:    fmt.Sprint(claims["sub"]),
+	}
+
+	ctx := context.TODO()
+	val := h.R.RS.Get(ctx, td.TokenUUID).Val()
+	if val == "" {
+		return nil, nil, errors.ErrUnauthorized
+	}
+
+	return td, &val, nil
 }
