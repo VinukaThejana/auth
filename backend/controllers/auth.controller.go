@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/config"
@@ -262,7 +261,8 @@ func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	_, _, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
+	tokenDetails, tokenValue, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
+	log.Error(err, nil)
 	if err != nil {
 		if err == errors.ErrUnauthorized {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{
@@ -282,15 +282,13 @@ func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	ctx := context.TODO()
-	err = utils.Token{}.DeleteToken(h, refreshToken)
+	err = utils.Token{}.DeleteToken(h, *&tokenDetails.TokenUUID, *&tokenValue.AccessTokenUUID)
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
 			Status: errors.ErrInternalServerError.Error(),
 		})
 	}
-	h.R.RS.Del(ctx, c.Locals(config.Enums{}.ACCESSTOKENUUID()).(string))
 
 	expired := time.Now().Add(-time.Hour * 24)
 	c.Cookie(&fiber.Cookie{
