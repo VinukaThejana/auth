@@ -200,7 +200,7 @@ func (Auth) RefreshToken(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	tokenClaims, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey, false)
+	tokenClaims, _, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
 	if err != nil {
 		if err == errors.ErrUnauthorized {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{
@@ -262,7 +262,7 @@ func (Auth) Logout(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		})
 	}
 
-	_, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey, false)
+	_, _, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
 	if err != nil {
 		if err == errors.ErrUnauthorized {
 			return c.Status(fiber.StatusUnauthorized).JSON(response{

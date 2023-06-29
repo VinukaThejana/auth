@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/config"
@@ -199,7 +197,7 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 		})
 	}
 
-	tokenClaims, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey, false)
+	tokenClaims, tokenValue, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
 	if err != nil {
 		log.Error(err, nil)
 		if err == errors.ErrUnauthorized {
@@ -220,23 +218,6 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 		})
 	}
 
-	ctx := context.TODO()
-	val := h.R.RS.Get(ctx, tokenClaims.TokenUUID).Val()
-	if val == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(response{
-			Status: errors.ErrUnauthorized.Error(),
-		})
-	}
-
-	var refreshTokenDetails schemas.RefreshTokenDetails
-	err = json.Unmarshal([]byte(val), &refreshTokenDetails)
-	if err != nil {
-		log.Error(err, nil)
-		return c.Status(fiber.StatusInternalServerError).JSON(response{
-			Status: errors.ErrInternalServerError.Error(),
-		})
-	}
-
 	return c.Status(fiber.StatusOK).JSON(struct {
 		ID        string    `json:"id"`
 		LoginAt   time.Time `json:"login_at"`
@@ -246,10 +227,10 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 		OS        string    `json:"os"`
 	}{
 		ID:        tokenClaims.TokenUUID,
-		LoginAt:   refreshTokenDetails.LoginAt,
-		IpAddress: refreshTokenDetails.IPAddress,
-		Location:  refreshTokenDetails.Location,
-		Device:    refreshTokenDetails.Device,
-		OS:        refreshTokenDetails.OS,
+		LoginAt:   tokenValue.LoginAt,
+		IpAddress: tokenValue.IPAddress,
+		Location:  tokenValue.Location,
+		Device:    tokenValue.Device,
+		OS:        tokenValue.OS,
 	})
 }
