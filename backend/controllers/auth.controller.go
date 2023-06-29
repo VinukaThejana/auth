@@ -141,11 +141,14 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 	}
 
 	refreshTokenDetails, err := utils.Token{}.CreateRefreshToken(h, user.ID.String(), env.RefreshTokenPrivateKey, env.RefreshTokenExpires, struct {
-		IPAddress string
-		Location  string
-		Device    string
-		OS        string
-	}{})
+		IPAddress       string
+		Location        string
+		Device          string
+		OS              string
+		AccessTokenUUID string
+	}{
+		AccessTokenUUID: accessTokenDetails.TokenUUID,
+	})
 	if err != nil {
 		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
