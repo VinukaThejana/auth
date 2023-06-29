@@ -1,6 +1,10 @@
 package controllers
 
 import (
+	"context"
+	"encoding/json"
+	"time"
+
 	"github.com/VinukaThejana/auth/backend/config"
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
@@ -183,5 +187,69 @@ func (User) UpdateName(c *fiber.Ctx, h *initialize.H) error {
 
 	return c.Status(fiber.StatusOK).JSON(response{
 		Status: errors.Okay,
+	})
+}
+
+// GetAuthInstances is a function that is used to obtain the authed instances of the user
+func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
+	refreshToken := c.Cookies("refresh_token")
+	if refreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	tokenClaims, err := utils.Token{}.ValidateToken(h, refreshToken, env.RefreshTokenPublicKey, false)
+	if err != nil {
+		log.Error(err, nil)
+		if err == errors.ErrUnauthorized {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: err.Error(),
+			})
+		}
+
+		if ok := (errors.CheckTokenError{}.Expired(err)); ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(response{
+				Status: errors.ErrRefreshTokenExpired.Error(),
+			})
+		}
+
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	ctx := context.TODO()
+	val := h.R.RS.Get(ctx, tokenClaims.TokenUUID).Val()
+	if val == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(response{
+			Status: errors.ErrUnauthorized.Error(),
+		})
+	}
+
+	var refreshTokenDetails schemas.RefreshTokenDetails
+	err = json.Unmarshal([]byte(val), &refreshTokenDetails)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(struct {
+		ID        string    `json:"id"`
+		LoginAt   time.Time `json:"login_at"`
+		IpAddress string    `json:"ip_address"`
+		Location  string    `json:"location"`
+		Device    string    `json:"device"`
+		OS        string    `json:"os"`
+	}{
+		ID:        tokenClaims.TokenUUID,
+		LoginAt:   refreshTokenDetails.LoginAt,
+		IpAddress: refreshTokenDetails.IPAddress,
+		Location:  refreshTokenDetails.Location,
+		Device:    refreshTokenDetails.Device,
+		OS:        refreshTokenDetails.OS,
 	})
 }

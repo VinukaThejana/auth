@@ -97,6 +97,9 @@ func main() {
 			return user.UpdateName(c, &h)
 		})
 	})
+	userG.Get("/devices", func(c *fiber.Ctx) error {
+		return user.GetAuthInstances(c, &h, &env)
+	})
 
 	emailG := app.Group("/email", func(c *fiber.Ctx) error {
 		return middleware.CheckAuth(c, &h, &env)
