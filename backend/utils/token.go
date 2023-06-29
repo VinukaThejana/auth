@@ -171,7 +171,7 @@ func (Token) ValidateAccessToken(h *initialize.H, token, publicKey string) (*Tok
 		return nil, errors.ErrInternalServerError
 	}
 
-	if val == &td.UserID {
+	if *val == *&td.UserID {
 		return td, nil
 	}
 
