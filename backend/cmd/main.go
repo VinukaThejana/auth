@@ -79,6 +79,9 @@ func main() {
 	authG.Post("/validate/username", func(c *fiber.Ctx) error {
 		return auth.CheckUsername(c, &h)
 	})
+	authG.Post("/logout", func(c *fiber.Ctx) error {
+		return auth.Logout(c, &h, &env)
+	})
 
 	userG := app.Group("/user", func(c *fiber.Ctx) error {
 		return middleware.CheckAuth(c, &h, &env)
