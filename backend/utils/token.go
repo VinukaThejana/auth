@@ -9,9 +9,11 @@ import (
 
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
+	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Token is a struct that gorups all the token related operations
@@ -86,6 +88,23 @@ func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl 
 
 	tokenVal, err := json.Marshal(refreshTokenDetails)
 	if err != nil {
+		return nil, err
+	}
+
+	userUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	err = h.DB.DB.Create(&models.Sessions{
+		UserID:    userUID,
+		TokenID:   uid,
+		ExpiresAt: *td.ExpiresIn,
+	}).Error
+	if err != nil {
+		if ok := (errors.CheckDBError{}.DuplicateKey(err)); !ok {
+			return nil, errors.ErrUnauthorized
+		}
+
 		return nil, err
 	}
 
@@ -180,12 +199,27 @@ func (Token) ValidateAccessToken(h *initialize.H, token, publicKey string) (*Tok
 
 // DeleteToken is a function to delete a token
 func (Token) DeleteToken(h *initialize.H, refreshTokenUUID, accessTokenUUID string) error {
+	uid, err := uuid.Parse(refreshTokenUUID)
+	if err != nil {
+		return err
+	}
+	err = h.DB.DB.Delete(&models.Sessions{
+		TokenID: uid,
+	}).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrUnauthorized
+		}
+
+		return err
+	}
+
 	ctx := context.TODO()
 
 	pipe := h.R.RS.Pipeline()
 	pipe.Del(ctx, refreshTokenUUID)
 	pipe.Del(ctx, accessTokenUUID)
-	_, err := pipe.Exec(ctx)
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -232,4 +266,20 @@ func validateToken(h *initialize.H, token, publicKey string) (*TokenDetails, *st
 	}
 
 	return td, &val, nil
+}
+
+// DeleteExpiredTokens is a function that is used to delete expired session tokens
+func (Token) DeleteExpiredTokens(h *initialize.H, userID string) {
+	var sessions []models.Sessions
+	err := h.DB.DB.Where("user_id = ? AND expires_at <= ?", userID, time.Now().UTC().Unix()).Find(&sessions).Error
+	if err != nil {
+		log.Error(err, nil)
+		return
+	}
+
+	err = h.DB.DB.Delete(&sessions).Error
+	if err != nil {
+		log.Error(err, nil)
+		return
+	}
 }
