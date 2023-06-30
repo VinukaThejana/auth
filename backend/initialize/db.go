@@ -28,7 +28,7 @@ func (h *H) InitDB(env *config.Env) {
 	db.Logger = gormLogger.Default.LogMode(gormLogger.Info)
 
 	color.Blue("Running migrations ... ")
-	err = db.AutoMigrate(models.User{})
+	err = db.AutoMigrate(models.User{}, models.Sessions{})
 	if err != nil {
 		errMsg := "Error running migrations !"
 		log.Errorf(err, &errMsg)
