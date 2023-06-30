@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/VinukaThejana/auth/backend/config"
@@ -228,4 +230,62 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(sessions)
+}
+
+// LogoutFromDevice is a function that is used to logut a user from a logged in device
+func (User) LogoutFromDevice(c *fiber.Ctx, h *initialize.H) error {
+	userID := c.Locals(config.Enums{}.USER()).(string)
+	accessTokenUUID := c.Locals(config.Enums{}.ACCESSTOKENUUID()).(string)
+
+	var payload struct {
+		RefreshTokenUUID string `json:"refresh_token_uuid"`
+	}
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	ctx := context.TODO()
+	val := h.R.RS.Get(ctx, payload.RefreshTokenUUID).Val()
+	if val == "" {
+		go func() {
+			utils.Token{}.DeleteExpiredTokens(h, userID)
+		}()
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	var tokenValue schemas.RefreshTokenDetails
+	err := json.Unmarshal([]byte(val), &tokenValue)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	if tokenValue.UserID != userID {
+		return c.Status(fiber.StatusUnauthorized).JSON(response{
+			Status: errors.ErrUnauthorized.Error(),
+		})
+	}
+
+	err = utils.Token{}.DeleteToken(h, payload.RefreshTokenUUID, tokenValue.AccessTokenUUID)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	if tokenValue.AccessTokenUUID == accessTokenUUID {
+		// TODO: Do some crazy redirect as the currently logged in session is deleted
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
 }
