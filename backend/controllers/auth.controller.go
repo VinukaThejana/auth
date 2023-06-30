@@ -123,6 +123,10 @@ func (Auth) Login(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		}
 	}
 
+	go func() {
+		utils.Token{}.DeleteExpiredTokens(h, user.ID.String())
+	}()
+
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
 	if err != nil {
 		log.Error(err, nil)
