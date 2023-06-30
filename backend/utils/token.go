@@ -78,11 +78,6 @@ func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl 
 
 	refreshTokenDetails = schemas.RefreshTokenDetails{
 		UserID:          userID,
-		LoginAt:         now,
-		IPAddress:       reqData.IPAddress,
-		Location:        reqData.Location,
-		OS:              reqData.OS,
-		Device:          reqData.Device,
 		AccessTokenUUID: reqData.AccessTokenUUID,
 	}
 
@@ -98,6 +93,11 @@ func (Token) CreateRefreshToken(h *initialize.H, userID, privateKey string, ttl 
 	err = h.DB.DB.Create(&models.Sessions{
 		UserID:    userUID,
 		TokenID:   uid,
+		IPAddress: "",
+		Location:  "",
+		OS:        "",
+		Device:    "",
+		LoginAt:   time.Now().UTC(),
 		ExpiresAt: *td.ExpiresIn,
 	}).Error
 	if err != nil {
@@ -276,8 +276,11 @@ func (Token) DeleteExpiredTokens(h *initialize.H, userID string) {
 		log.Error(err, nil)
 		return
 	}
+	if len(sessions) == 0 {
+		return
+	}
 
-	err = h.DB.DB.Delete(&sessions).Error
+	err = h.DB.DB.Where("1 = 1").Delete(&sessions).Error
 	if err != nil {
 		log.Error(err, nil)
 		return

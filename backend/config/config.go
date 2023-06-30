@@ -1,5 +1,4 @@
-// package config
-// Contains all the configurations
+// Package config contains all the configurations
 package config
 
 import "github.com/VinukaThejana/go-utils/logger"

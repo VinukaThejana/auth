@@ -197,7 +197,7 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 		})
 	}
 
-	tokenClaims, tokenValue, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
+	tokenClaims, _, err := utils.Token{}.ValidateRefreshToken(h, refreshToken, env.RefreshTokenPublicKey)
 	if err != nil {
 		log.Error(err, nil)
 		if err == errors.ErrUnauthorized {
@@ -218,19 +218,14 @@ func (User) GetAuthInstances(c *fiber.Ctx, h *initialize.H, env *config.Env) err
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(struct {
-		ID        string    `json:"id"`
-		LoginAt   time.Time `json:"login_at"`
-		IpAddress string    `json:"ip_address"`
-		Location  string    `json:"location"`
-		Device    string    `json:"device"`
-		OS        string    `json:"os"`
-	}{
-		ID:        tokenClaims.TokenUUID,
-		LoginAt:   tokenValue.LoginAt,
-		IpAddress: tokenValue.IPAddress,
-		Location:  tokenValue.Location,
-		Device:    tokenValue.Device,
-		OS:        tokenValue.OS,
-	})
+	var sessions []models.Sessions
+	err = h.DB.DB.Where("user_id = ? AND expires_at > ?", tokenClaims.UserID, time.Now().UTC().Unix()).Find(&sessions).Error
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(sessions)
 }
