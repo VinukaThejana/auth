@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/storage/redis"
 )
 
+// Storage is struct that contains the connections to the Redis storage for ratelimiting
 type Storage struct {
 	S *redis.Storage
 }
