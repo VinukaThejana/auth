@@ -353,3 +353,65 @@ func (Auth) CheckUsername(c *fiber.Ctx, h *initialize.H) error {
 		Available: false,
 	})
 }
+
+// ConfirmAction is a function that is called when we want to make sure that user is really intending
+// to do the particular thing that the user is intending
+func (Auth) ConfirmAction(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
+	var payload *schemas.LoginInput
+	if err := c.BodyParser(&payload); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	if err := payload.Validate(); err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusBadRequest).JSON(response{
+			Status: errors.ErrBadRequest.Error(),
+		})
+	}
+
+	var user models.User
+	if payload.Username != "" {
+		result := h.DB.DB.First(&user, "username = ?", payload.Username)
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusBadRequest).JSON(response{
+					Status: errors.ErrIncorrectCredentials.Error(),
+				})
+			}
+
+			log.Error(result.Error, nil)
+			return c.Status(fiber.StatusInternalServerError).JSON(response{
+				Status: errors.ErrInternalServerError.Error(),
+			})
+		}
+	} else {
+		result := h.DB.DB.First(&user, "email = ?", payload.Email)
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusBadRequest).JSON(response{
+					Status: errors.ErrIncorrectCredentials.Error(),
+				})
+			}
+
+			log.Error(result.Error, nil)
+			return c.Status(fiber.StatusInternalServerError).JSON(response{
+				Status: errors.ErrInternalServerError.Error(),
+			})
+		}
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusUnauthorized).JSON(response{
+			Status: errors.ErrUnauthorized.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
+}
