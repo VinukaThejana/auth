@@ -104,6 +104,9 @@ func main() {
 		router.Get("/devices", func(c *fiber.Ctx) error {
 			return user.GetAuthInstances(c, &h, &env)
 		})
+		router.Post("/confirm", func(c *fiber.Ctx) error {
+			return user.ConfirmAction(c, &h, &env)
+		})
 		router.Post("/logout-from-device", func(c *fiber.Ctx) error {
 			return user.LogoutFromDevice(c, &h)
 		})
