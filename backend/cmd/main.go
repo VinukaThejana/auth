@@ -25,6 +25,7 @@ var (
 	auth  controllers.Auth
 	user  controllers.User
 	email controllers.Email
+	oauth controllers.OAuth
 )
 
 func init() {
@@ -81,6 +82,15 @@ func main() {
 	})
 	authG.Post("/logout", func(c *fiber.Ctx) error {
 		return auth.Logout(c, &h, &env)
+	})
+
+	oauthG := app.Group("/oauth")
+	oauthG.Route("/redirects", func(router fiber.Router) {
+		router.Get("/github", func(c *fiber.Ctx) error {
+			return oauth.RedirectToGitHubOAuthFlow(c, &env)
+		})
+	})
+	oauthG.Route("/sessions", func(router fiber.Router) {
 	})
 
 	userG := app.Group("/user", func(c *fiber.Ctx) error {
