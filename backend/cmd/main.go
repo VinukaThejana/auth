@@ -100,11 +100,13 @@ func main() {
 			return user.UpdateName(c, &h)
 		})
 	})
-	userG.Get("/devices", func(c *fiber.Ctx) error {
-		return user.GetAuthInstances(c, &h, &env)
-	})
-	userG.Post("/logout-from-device", func(c *fiber.Ctx) error {
-		return user.LogoutFromDevice(c, &h)
+	userG.Route("/auth", func(router fiber.Router) {
+		router.Get("/devices", func(c *fiber.Ctx) error {
+			return user.GetAuthInstances(c, &h, &env)
+		})
+		router.Post("/logout-from-device", func(c *fiber.Ctx) error {
+			return user.LogoutFromDevice(c, &h)
+		})
 	})
 
 	emailG := app.Group("/email", func(c *fiber.Ctx) error {
