@@ -33,6 +33,12 @@ type Env struct {
 	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE" validate:"required"`
 
 	ResendAPIKey string `mapstructure:"RESEND_API_KEY" validate:"required"`
+
+	GithubClientID     string `mapstructure:"GITHUB_CLIENT_ID" validate:"required"`
+	GithubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET" validate:"required"`
+	GithubRedirectURL  string `mapstructure:"GITHUB_REDIRECT_URL" validate:"required"`
+	GithubFromURL      string `mapstructure:"GITHUB_FROM_URL" validate:"required"`
+	GithubRootURL      string `mapstructure:"GITHUB_ROOT_URL" validate:"required"`
 }
 
 // Load is a function that is used to load the env variables from the env file
