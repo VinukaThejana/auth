@@ -12,7 +12,7 @@ type User struct{}
 // IsEmailAvailable is a function to check wether the email address given is already occupied
 func (User) IsEmailAvailable(h *initialize.H, email string) (bool, error) {
 	var user models.User
-	err := h.DB.DB.Where("email = ?", email).First(&user).Error
+	err := h.DB.DB.Select("email").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if err != gorm.ErrRecordNotFound {
 			return false, err
@@ -27,7 +27,7 @@ func (User) IsEmailAvailable(h *initialize.H, email string) (bool, error) {
 // IsUsernameAvailable is a function to check wether the given username is available in the database
 func (User) IsUsernameAvailable(h *initialize.H, username string) (bool, error) {
 	var user models.User
-	err := h.DB.DB.Where("username = ?", username).First(&user).Error
+	err := h.DB.DB.Select("username").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err != gorm.ErrRecordNotFound {
 			return false, err
