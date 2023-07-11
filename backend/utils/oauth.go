@@ -95,7 +95,7 @@ func (OAuth) GetGitHubUser(accessToken string) (*schemas.GitHub, error) {
 	}
 
 	return &schemas.GitHub{
-		ID:        payload["id"].(float64),
+		ID:        int(payload["id"].(float64)),
 		Name:      payload["name"].(string),
 		Username:  payload["login"].(string),
 		AvatarURL: payload["avatar_url"].(string),
