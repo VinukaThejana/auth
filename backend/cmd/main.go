@@ -91,6 +91,9 @@ func main() {
 		})
 	})
 	oauthG.Route("/sessions", func(router fiber.Router) {
+		router.Get("/github", func(c *fiber.Ctx) error {
+			return oauth.GithubOAuthCallback(c, &h, &env)
+		})
 	})
 
 	userG := app.Group("/user", func(c *fiber.Ctx) error {
