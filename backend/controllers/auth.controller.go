@@ -8,6 +8,7 @@ import (
 	"github.com/VinukaThejana/auth/backend/initialize"
 	"github.com/VinukaThejana/auth/backend/models"
 	"github.com/VinukaThejana/auth/backend/schemas"
+	"github.com/VinukaThejana/auth/backend/services"
 	"github.com/VinukaThejana/auth/backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -54,15 +55,15 @@ func (Auth) Register(c *fiber.Ctx, h *initialize.H, env *config.Env) error {
 		Password: string(hashedPassword),
 	}
 
-	result := h.DB.DB.Create(&newUser)
-	if result.Error != nil {
-		if ok := (errors.CheckDBError{}.DuplicateKey(result.Error)); ok {
+	newUser, err = services.User{}.Create(h, newUser)
+	if err != nil {
+		if ok := (errors.CheckDBError{}.DuplicateKey(err)); ok {
 			return c.Status(fiber.StatusBadRequest).JSON(response{
 				Status: errors.ErrBadRequest.Error(),
 			})
 		}
 
-		log.Error(result.Error, nil)
+		log.Error(err, nil)
 		return c.Status(fiber.StatusInternalServerError).JSON(response{
 			Status: errors.ErrInternalServerError.Error(),
 		})
