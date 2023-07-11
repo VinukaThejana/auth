@@ -12,7 +12,7 @@ type User struct {
 	Name       string     `gorm:"type:varchar(100);not null"`
 	Username   string     `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Email      string     `gorm:"type:varchar(100);uniqueIndex"`
-	Password   string     `gorm:"type:varchar(100);not null"`
+	Password   string     `gorm:"type:varchar(100)"`
 	Role       *string    `gorm:"type:varchar(50);default:'user';not null"`
 	Provider   *string    `gorm:"type:varchar(50);default:'local';not null"`
 	ProviderID string     `gorm:"type:varchar(100)"`
