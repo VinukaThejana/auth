@@ -7,7 +7,6 @@ import (
 	"github.com/VinukaThejana/auth/backend/config"
 	"github.com/VinukaThejana/auth/backend/errors"
 	"github.com/VinukaThejana/auth/backend/initialize"
-	"github.com/VinukaThejana/auth/backend/schemas"
 	"github.com/VinukaThejana/auth/backend/services"
 	"github.com/VinukaThejana/auth/backend/utils"
 	"github.com/gofiber/fiber/v2"
@@ -66,5 +65,65 @@ func (OAuth) GithubOAuthCallback(c *fiber.Ctx, h *initialize.H, env *config.Env)
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(schemas.FilterUserRecord(&user))
+	go func() {
+		utils.Token{}.DeleteExpiredTokens(h, user.ID.String())
+	}()
+
+	accessTokenDetails, err := utils.Token{}.CreateAccessToken(h, user.ID.String(), env.AccessTokenPrivateKey, env.AccessTokenExpires)
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	refreshTokenDetails, err := utils.Token{}.CreateRefreshToken(h, user.ID.String(), env.RefreshTokenPrivateKey, env.RefreshTokenExpires, struct {
+		IPAddress       string
+		Location        string
+		Device          string
+		OS              string
+		AccessTokenUUID string
+	}{
+		AccessTokenUUID: accessTokenDetails.TokenUUID,
+	})
+	if err != nil {
+		log.Error(err, nil)
+		return c.Status(fiber.StatusInternalServerError).JSON(response{
+			Status: errors.ErrInternalServerError.Error(),
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    *accessTokenDetails.Token,
+		Path:     "/",
+		MaxAge:   env.AccessTokenMaxAge * 60,
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    *refreshTokenDetails.Token,
+		Path:     "/",
+		MaxAge:   env.RefreshTokenMaxAge * 60,
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "logged_in",
+		Value:    "true",
+		Path:     "/",
+		MaxAge:   env.AccessTokenMaxAge * 60,
+		Secure:   false,
+		HTTPOnly: false,
+		Domain:   "localhost",
+	})
+
+	return c.Status(fiber.StatusOK).JSON(response{
+		Status: errors.Okay,
+	})
 }
